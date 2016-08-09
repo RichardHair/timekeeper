@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Timekeeper</title>
+
+    <!-- Bootstrap -->
+    <link href="docs/css/bootstrap.min.css" rel="stylesheet">
+    <link href="docs/css/main.css" rel="stylesheet">
+	
+	<!-- Timekeeper js -->
+	<script src="docs/js/Timesheet.js"></script>
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  
+  <div id='background' class='bg'>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="docs/js/jquery-2.2.2.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="docs/js/bootstrap.min.js"></script>
+	<div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+
+<div class="container">
+
+  <div class="col-xs-0 col-sm-1 col-md-1 col-lg-1"></div>
+  <div class="table-responsive">          
+  <table class="table table-hover table-borderless" id="entry_table">
+    <thead>
+      <tr>
+		<form role="form" input type="submit" id="new_entry_form">
+<!--			<th class="col-xs-0 col-sm-1 col-md-1 col-lg-1"></th> -->
+			<th class="col-xs-2 col-sm-1 col-md-1 col-lg-1 text-right" id="total_time" width='8em'></th>
+			<th class="col-xs-10 col-sm-8 col-md-8 col-lg-8">
+				<input type="text" class="form-control" id="new_entry_name" autocomplete="off"
+					placeholder="What are you working on today?" maxLength=100>
+			</th>
+<!--			<th class="col-xs-0 col-sm-2 col-md-2 col-lg-2"></th> -->
+		</form>
+	  </tr>
+    </thead>
+    <tbody id="entry_table_body">
+      <tr id='dummy_row' class="collapse out timesheetEntry">
+<!--	   <td></td> -->
+		   <td class="text-right entryTime"></td>
+		   <td class='entryName'></td>
+<!--	   <td></td> -->
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="col-xs-0 col-sm-1 col-md-1 col-lg-1"></div>
+
+	
+  <!--Context Menu and Modal Overlays-->
+  <ul class="dropdown-menu contextMenu" id="entry_context_menu" data-id="">
+    <li><a href='#' data-toggle="modal" data-target="#edit_entry_name_modal">Edit name</a></li>
+    <li><a href='#' data-toggle="modal" data-target="#edit_entry_time_modal">Adjust time</a></li>
+    <li><a href='#'>Delete</a></li>
+  </ul>
+
+    <!-- Edit Name Overlay -->
+<div id="edit_entry_name_modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content" id="entry_context_menu_name_overlay">
+	  <form role="form" type="submit" id="entry_name_edit_form" method="post" action='#'>
+		  <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal">&times;</button>
+			<h4 class="modal-title">New Name for This Task</h4>
+		  </div>
+		  <div class="modal-body">
+				<input type="text" class="form-control modal-name-input" autocomplete="off"
+					maxLength=100>
+		  </div>
+		  <div class="modal-footer">
+			 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			<button class="btn btn-primary" >OK</button>
+		  </div>
+	  </form>
+    </div>
+  </div>
+</div>
+	
+    <!-- Edit Time Overlay -->
+<div id="edit_entry_time_modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content" id="entry_context_menu_time_overlay">
+	  <form role="form" type="submit" id="entry_time_edit_form" method="post" action='#'>
+		  <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal">&times;</button>
+			<h4 class="modal-title">Adjust Time for This Task</h4>
+		  </div>
+		  <div class="modal-body">
+				<label for="adjust_hours">Hours:</label>
+				<input type="number" class="form-control modal-seconds-input" id="adjust_hours" autocomplete="off"
+					maxLength=2>
+				<label for="adjust_minutes">Minutes:</label>
+				<input type="number" class="form-control modal-seconds-input" id="adjust_minutes" autocomplete="off"
+					maxLength=2>
+				<label for="adjust_seconds">Seconds:</label>
+				<input type="number" class="form-control modal-seconds-input" id="adjust_seconds" autocomplete="off"
+					maxLength=2>
+		  </div>
+		  <div class="modal-footer">
+			 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			<button class="btn btn-primary" >OK</button>
+		  </div>
+	  </form>
+    </div>
+  </div>
+</div>
+	
+  </div>	
+  </body>
+  
+  <script>
+
+  //html actuator
+  
+  //define jquery objects
+  var $total = $("#total_time");
+  var $newEntryName = $("#new_entry_name");
+  var $entryTableBody = $("#entry_table_body");
+  var $dummyRow = $("#dummy_row");
+  var activeRow = null;
+  var $entryContextMenu = $("#entry_context_menu");
+  var $entryContextMenuNameOverlay = $("#entry_context_menu_name_overlay");
+  var $entryContextMenuTimeOverlay = $("#entry_context_menu_time_overlay");
+  var timesheet;
+  
+  var $newEntryForm = $("#new_entry_form");
+  var $entryNameEditForm = $("#entry_name_edit_form");
+  var $entryTimeEditForm = $("#entry_time_edit_form");
+
+  
+    //create timesheet on load
+  $(document).ready( function(){
+	timesheet = new Timesheet();
+	window.setInterval(updateEntryTable, 1000);
+	$newEntryName.focus();	
+  });
+
+  //add a new row on form submit
+  $newEntryForm.submit(function(e){
+	addRow();
+	e.preventDefault();
+	return false;
+  });
+  
+  //remove placeholder from text input
+  $newEntryName.on('input', function(){
+ 	$(this).removeAttr('placeholder');
+  });
+  
+  //every second, the times in the table update for the active entry and the $total time
+  function updateEntryTable(){
+    timesheet.updateTimes();
+	$total.html(getFormattedTime(timesheet.getTotalTime()));
+	if (timesheet.hasActiveEntry()) {
+		var activeRowId = timesheet.getActiveEntry().getId();
+		var activeRowTime = getFormattedTime(timesheet.getActiveEntryTime());
+		activeRow = $('#' + activeRowId);
+		activeRow.find('td').eq(0).html(activeRowTime);
+	}
+  }
+  
+  //add a new entry to the table
+  function addRow(){
+ 	var name = $newEntryName.val();
+	if (name != null && name != ''){
+		var newRowId = timesheet.addEntry(name);
+		if (newRowId == null) {
+			return;
+		}
+		var newRow = $dummyRow.clone();
+		newRow.removeClass('collapse');
+		newRow.removeClass('out');
+		newRow.attr('id', newRowId);
+		updateRowName(newRow, name);
+		newRow.insertAfter($dummyRow);
+		$newEntryName.val('');
+		addEntryRowEventHandlers(newRow);
+		newRow.click();
+	}
+  }
+  
+  //change the name value for a row
+  function updateRowName(row, name){
+	row.find('td').eq(1).html(name);
+  }
+	
+  //change the time value on a row
+  function updateRowTime(row, time){
+	row.find('td').eq(0).html(time);
+  }
+  
+  //remove row
+  function removeRow(rowId){
+	$('#' + rowId).remove();
+  }
+  
+  //add event handlers to a row
+  function addEntryRowEventHandlers(row) {
+	//activate a row when you click on it
+	row.on('click', function(){
+		if ($(this).hasClass('timesheetEntry')) {
+			activeRow = $(this);
+			activeRow.siblings().children().removeClass('highlight');
+			if (timesheet.activateEntryToggle($(this).attr('id'))) {
+				activeRow.find('.entryTime').eq(0).addClass('highlight');
+				activeRow.find('.entryName').eq(0).addClass('highlight');
+			} else {
+				activeRow.children().removeClass('highlight');
+				activeRow = null;
+			}
+		}
+	});
+	
+	//when activating context menu, set the data-id of the overlay to the row/entry id
+	row.on('contextmenu', function(e){
+		$entryContextMenu.css({
+			display: 'block',
+			left: e.pageX,
+			top: e.pageY
+		});
+		$entryContextMenu.attr('data-id', row.attr('id'));
+		return false;
+	})
+  }
+  
+  //handlers for context menu
+  $entryContextMenu.on('click', 'a', function(){
+	$entryContextMenu.hide();
+  });
+  
+  $('body').click(function(){
+	$entryContextMenu.hide();
+  });
+  
+  //handles launch of the edit name overlay from context menu
+  $entryContextMenu.find('a').eq(0).on('click', function(){
+	var entryId = $entryContextMenu.attr('data-id');
+	var name = timesheet.getEntryById(entryId).getName();
+	var textInput = $entryContextMenuNameOverlay.find('.modal-name-input'); 
+	$entryContextMenuNameOverlay.find('.modal-title').text("Edit Name for " + name);
+	textInput.val(name);
+	textInput.focus();
+  });
+  
+  $entryNameEditForm.submit(function(e){
+	e.preventDefault();
+	var entryId = $entryContextMenu.attr('data-id');
+	var textInput = $entryContextMenuNameOverlay.find('.modal-name-input'); 
+	timesheet.getEntryById(entryId).setName(textInput.val());
+	updateRowName($('#' + entryId), textInput.val());
+	$('#edit_entry_name_modal').modal('toggle');
+  });
+  
+  //handles launch of the edit time overlay from context menu
+  $entryContextMenu.find('a').eq(1).on('click', function(){
+	var entryId = $entryContextMenu.attr('data-id');
+	//var time = timesheet.getEntryById(entryId).getTotalTime(new Date());
+	//var textInput = $entryContextMenuTimeOverlay.find('.modal-name-input'); 
+	$entryContextMenuTimeOverlay.find('.modal-title').text("Adjust Time for " + name);
+	//textInput.val(time);
+	//textInput.focus();
+	alert("time overlay");
+  });
+  
+  $entryTimeEditForm.submit(function(e){
+	e.preventDefault();
+	var entryId = $entryContextMenu.attr('data-id');
+	//var textInput = $entryContextMenuTimeOverlay.find('.modal-name-input'); 
+	timesheet.getEntryById(entryId).setName(textInput.val());
+	updateRowName($('#' + entryId), textInput.val());
+	$('#edit_entry_time_modal').modal('toggle');
+  });
+  
+  //delete table entry via the context menu
+  $entryContextMenu.find('a').eq(2).on('click', function(){
+	var entryId = $entryContextMenu.attr('data-id');
+	timesheet.deleteEntryById(entryId);
+	if (activeRow != null && activeRow.attr('id') == entryId) {
+		activeRow = null;
+	}
+	removeRow(entryId);
+  });
+  
+  //activate the next entry down
+  function selectNextRow(){
+	if(activeRow != null){
+		var nextRow = activeRow.closest('tr').next();
+		if (nextRow != null && nextRow.hasClass('timesheetEntry') && !nextRow.is($dummyRow)) {
+			activeRow = nextRow;
+			nextRow.click();
+		}
+	} else {
+		$entryTableBody.find('.timesheetEntry').eq(1).click();
+	}
+  };
+
+  //activate the next entry up
+  function selectPreviousRow(){
+	if(activeRow != null){
+		var prevRow = activeRow.closest('tr').prev();
+		if (prevRow != null && prevRow.hasClass('timesheetEntry') && !prevRow.is($dummyRow)) {
+			activeRow = prevRow;
+			prevRow.click();
+		} else {
+			activeRow.click();
+		}
+	}  
+  };
+  
+ ///////////////////////////////////////key bindings!//////////////////////////////////////
+ $(document).keydown(function(e){
+	switch(e.which){	
+		case 38:
+			selectPreviousRow();
+			break;
+		case 40:
+			selectNextRow();
+			break;
+		default: return;
+	}
+	e.preventDefault;
+ });
+ 
+	
+  </script>
+</html>
